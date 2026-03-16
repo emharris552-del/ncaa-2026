@@ -1126,3 +1126,15 @@ svg.court { display: block; }
 @media (max-width: 768px) {
   .qh-grid { grid-template-columns: 1fr; }
 }
+
+/* ── STNAV PANELS (standings sub-tabs) ──────────────────── */
+.stnav-panel { display: none; }
+.stnav-panel.active { display: block; }
+
+/* ── SEED ANALYSIS ───────────────────────────────────────── */
+.seed-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px;
+  cursor: pointer; transition: background .12s;
+}
+.seed-card:hover { background: var(--bg3); }

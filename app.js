@@ -16,7 +16,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
 
     if (btn.dataset.view === 'bracket') renderBracket();
-    if (btn.dataset.view === 'standings') renderStandings();
+    if (btn.dataset.view === 'standings') { if(_stSubTab==='rankings') renderStandings(); else if(_stSubTab==='seedanalysis') renderSeedAnalysis(); else if(_stSubTab==='upsethistory') renderUpsetHistory(); }
     if (btn.dataset.view === 'trends') renderTrends();
     if (btn.dataset.view === 'betting') renderBettingPage();
   });
@@ -200,6 +200,7 @@ function renderTab(tab, tA, tB) {
     case 'shotcharts':   renderShotCharts(tA, tB); break;
     case 'roster':       renderRoster(tA, tB); break;
     case 'xfactor':      renderXFactor(tA, tB); break;
+    case 'killshot':     renderKillshot(tA, tB); break;
   }
 }
 
@@ -303,6 +304,21 @@ document.getElementById('sort-metric').addEventListener('change', () => {
 });
 document.getElementById('filter-region').addEventListener('change', () => {
   if (document.getElementById('view-standings').classList.contains('active')) renderStandings();
+});
+
+// ── STANDINGS SUB-NAV ─────────────────────────────────────
+let _stSubTab = 'rankings';
+document.querySelectorAll('[data-stnav]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    _stSubTab = btn.getAttribute('data-stnav');
+    document.querySelectorAll('[data-stnav]').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.stnav-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('stnav-' + _stSubTab);
+    if (panel) panel.classList.add('active');
+    if (_stSubTab === 'rankings')     renderStandings();
+    if (_stSubTab === 'seedanalysis') renderSeedAnalysis();
+    if (_stSubTab === 'upsethistory') renderUpsetHistory();
+  });
 });
 
 // ── INIT ──────────────────────────────────────────────────

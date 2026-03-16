@@ -483,3 +483,107 @@ function renderRoster(tA, tB) {
       '</div>' +
     '</div>';
 }
+
+// ── KILLSHOT TAB ──────────────────────────────────────────
+// "Killshot" = a scoring run that breaks the game open (EvanMiya "runs")
+function renderKillshot(tA, tB) {
+  const el = document.getElementById('killshot-content');
+  if (!el) return;
+
+  const colorA = '#60a5fa', colorB = '#f87171';
+
+  function logoTag(t, color) {
+    const url = getLogoUrl(t.name);
+    return (url ? '<img src="'+url+'" class="team-logo-sm" alt="" onerror="this.style.display=\'none\'">' : '') +
+      '<span style="color:'+color+';font-weight:700">'+t.name+'</span>';
+  }
+
+  function compHdr() {
+    return '<div class="bet-comp-header" style="margin-bottom:10px">' +
+      '<div class="bet-comp-team a">'+logoTag(tA,colorA)+'</div>' +
+      '<div style="font-size:11px;color:#8fa3c0">vs</div>' +
+      '<div class="bet-comp-team b">'+logoTag(tB,colorB)+'</div>' +
+    '</div>';
+  }
+
+  function ksRow(label, valA, valB, higherBetter, fmt) {
+    const va = valA != null ? parseFloat(valA) : null;
+    const vb = valB != null ? parseFloat(valB) : null;
+    const aW = va != null && vb != null && (higherBetter ? va > vb : va < vb);
+    const bW = va != null && vb != null && (higherBetter ? vb > va : vb < va);
+    const fv = v => { if(v==null) return '--'; if(fmt==='int') return Math.round(v); return v.toFixed(3); };
+    return '<div class="bet-comp-row">' +
+      '<div class="bet-comp-val a" style="'+(aW?'color:#4ade80;font-weight:800':'')+'">'+fv(va)+'</div>' +
+      '<div class="bet-comp-label">'+label+'</div>' +
+      '<div class="bet-comp-val b" style="'+(bW?'color:#4ade80;font-weight:800':'')+'">'+fv(vb)+'</div>' +
+    '</div>';
+  }
+
+  // Big stat displays
+  function bigStat(label, val, color, sub) {
+    const fv = val != null ? parseFloat(val).toFixed(3) : '--';
+    const numColor = val != null ? (parseFloat(val) > 0.5 ? '#4ade80' : parseFloat(val) > 0.2 ? '#facc15' : '#f87171') : '#8fa3c0';
+    return '<div style="background:var(--bg3);border-radius:var(--radius);padding:12px;text-align:center">' +
+      '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#b0c4de;margin-bottom:4px">'+label+'</div>' +
+      '<div style="font-family:\'Barlow Condensed\';font-size:30px;font-weight:900;color:'+numColor+'">'+fv+'</div>' +
+      (sub ? '<div style="font-size:11px;color:#8fa3c0;margin-top:2px">'+sub+'</div>' : '') +
+    '</div>';
+  }
+
+  // Killshot explanation
+  const explainer = '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-size:13px;color:#b0c4de">' +
+    '<strong style="color:#f59e0b">What is a Killshot?</strong> A "killshot" is a scoring run that decisively breaks a game open — ' +
+    'a sequence where a team scores multiple consecutive baskets while holding the opponent scoreless or nearly so. ' +
+    'Teams with high killshot rates have the ability to <strong>put games away</strong> with momentum swings. ' +
+    'High conceded rate = vulnerable to being run off the floor.' +
+  '</div>';
+
+  const hasA = tA.ks_per_game != null;
+  const hasB = tB.ks_per_game != null;
+
+  // Stat cards for each team
+  function teamKsCard(t, color) {
+    if (t.ks_per_game == null) return '<div style="padding:20px;color:#8fa3c0;text-align:center">No killshot data available</div>';
+    const marginColor = (t.ks_margin||0) > 0.5 ? '#4ade80' : (t.ks_margin||0) > 0 ? '#facc15' : '#f87171';
+    return '<div style="border:1px solid '+color+'33;border-radius:var(--radius-lg);padding:14px;background:linear-gradient(135deg,'+color+'06,var(--bg2))">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+        logoTag(t, color) +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+        bigStat('Killshots / Game', t.ks_per_game, color, 'Runs scored') +
+        bigStat('Conceded / Game', t.ks_conceded_per_game, color, 'Runs allowed') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+        bigStat('Margin / Game', t.ks_margin, color, 'Net runs') +
+        bigStat('Total Killshots', t.ks_total, color, 'Season total') +
+        bigStat('Total Conceded', t.ks_conceded_total, color, 'Season total') +
+      '</div>' +
+    '</div>';
+  }
+
+  // Field context
+  const allTeams = Object.values(TEAMS_DATA).filter(t=>t.ks_per_game!=null).sort((a,b)=>(b.ks_margin||0)-(a.ks_margin||0));
+  const rankA = allTeams.findIndex(t=>t.name===tA.name)+1;
+  const rankB = allTeams.findIndex(t=>t.name===tB.name)+1;
+
+  el.innerHTML =
+    explainer +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">' +
+      teamKsCard(tA, colorA) +
+      teamKsCard(tB, colorB) +
+    '</div>' +
+    '<div class="bet-comp-card" style="margin-bottom:12px">' +
+      '<div class="bet-section-title"><span>⚡</span> Head-to-Head Comparison</div>' +
+      compHdr() +
+      (rankA ? '<div style="display:flex;justify-content:space-between;font-size:11px;color:#b0c4de;margin-bottom:8px"><span>Field rank: <strong style="color:'+colorA+'">#'+rankA+'</strong></span><span>Field rank: <strong style="color:'+colorB+'">#'+rankB+'</strong></span></div>' : '') +
+      ksRow('Killshots / Game',    tA.ks_per_game,          tB.ks_per_game,          true) +
+      ksRow('Conceded / Game',     tA.ks_conceded_per_game, tB.ks_conceded_per_game, false) +
+      ksRow('Net Margin / Game',   tA.ks_margin,            tB.ks_margin,            true) +
+      ksRow('Season Total',        tA.ks_total,             tB.ks_total,             true,  'int') +
+      ksRow('Season Conceded',     tA.ks_conceded_total,    tB.ks_conceded_total,    false, 'int') +
+    '</div>' +
+    '<div style="font-size:11px;color:#8fa3c0;padding:8px 12px;background:var(--bg2);border-radius:6px">' +
+      'Killshot data from EvanMiya.com. A killshot = a decisive scoring run. ' +
+      'The team with the higher net margin has a demonstrated ability to control game momentum.' +
+    '</div>';
+}

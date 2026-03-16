@@ -70,31 +70,46 @@ function renderWinSummary(tA, tB) {
   const el = document.getElementById('win-summary-section');
   if (!el) return;
 
-  const metrics = [
-    { name:'EvanMiya BPR',    fieldA:'bpr',            fieldB:'bpr',            w:3.0, hi:true  },
-    { name:'Torvik AdjEM',    fieldA:'adj_em',          fieldB:'adj_em',          w:3.0, hi:true  },
-    { name:'KP AdjOE',        fieldA:'kp_adj_oe',       fieldB:'kp_adj_oe',       w:1.5, hi:true  },
-    { name:'KP AdjDE',        fieldA:'kp_adj_de',       fieldB:'kp_adj_de',       w:1.5, hi:false },
-    { name:'Off eFG%',        fieldA:'off_efg',         fieldB:'off_efg',         w:1.0, hi:true  },
-    { name:'Def eFG%',        fieldA:'def_efg',         fieldB:'def_efg',         w:1.0, hi:false },
-    { name:'Win% vs Ranked',  fieldA:'ranked_win_pct',  fieldB:'ranked_win_pct',  w:1.5, hi:true  },
-    { name:'Close Games',     fieldA:'close_games_pct', fieldB:'close_games_pct', w:1.0, hi:true  },
-    { name:'Extra Chances',   fieldA:'extra_chances',   fieldB:'extra_chances',   w:0.5, hi:true  },
+  // ── CORE METRICS ─────────────────────────────────────────
+  // ── IMPROVED WIN PROBABILITY ──────────────────────────────
+  // Incorporates: core efficiency, shot chart matchup edge,
+  // killshot margin, seed analysis, close games, ranked record
+
+  // Shot chart matchup edge: how each team shoots vs THIS opponent's defense
+  // vs how the opponent shoots vs THIS team's defense (actual head-to-head shooting edge)
+  const aNetShoot = (tA.shot_off && tB.shot_def) ? tA.shot_off.efg - tB.shot_def.efg : null;
+  const bNetShoot = (tB.shot_off && tA.shot_def) ? tB.shot_off.efg - tA.shot_def.efg : null;
+  const shootEdgeDiff = (aNetShoot != null && bNetShoot != null) ? aNetShoot - bNetShoot : null;
+
+  // Metrics: { name, diff (positive = favors A), w (weight), scale (for tanh normalization) }
+  // scale = the difference that represents "meaningful" — tanh(1) ≈ 0.76
+  const rawMetrics = [
+    { name:'EvanMiya BPR',        diff: tA.bpr != null && tB.bpr != null ? tA.bpr - tB.bpr : null,                            w:3.0,  scale:8   },
+    { name:'Torvik AdjEM',        diff: tA.adj_em != null && tB.adj_em != null ? tA.adj_em - tB.adj_em : null,                 w:3.0,  scale:8   },
+    { name:'KP Adj Offense',      diff: tA.kp_adj_oe != null && tB.kp_adj_oe != null ? tA.kp_adj_oe - tB.kp_adj_oe : null,   w:1.5,  scale:8   },
+    { name:'KP Adj Defense',      diff: tA.kp_adj_de != null && tB.kp_adj_de != null ? tB.kp_adj_de - tA.kp_adj_de : null,   w:1.5,  scale:8   },
+    { name:'Shot Chart Edge',     diff: shootEdgeDiff,                                                                          w:2.0,  scale:5   },
+    { name:'Win% vs Ranked',      diff: tA.ranked_win_pct != null && tB.ranked_win_pct != null ? tA.ranked_win_pct - tB.ranked_win_pct : null,  w:1.5, scale:20 },
+    { name:'Close Game Win%',     diff: tA.close_games_pct != null && tB.close_games_pct != null ? tA.close_games_pct - tB.close_games_pct : null, w:1.0, scale:20 },
+    { name:'Killshot Margin',     diff: tA.ks_margin != null && tB.ks_margin != null ? tA.ks_margin - tB.ks_margin : null,    w:1.5,  scale:0.5 },
+    { name:'Seed Value',          diff: tA.seed_bpr_diff != null && tB.seed_bpr_diff != null ? tA.seed_bpr_diff - tB.seed_bpr_diff : null, w:0.75, scale:3 },
+    { name:'Extra Chances',       diff: tA.extra_chances != null && tB.extra_chances != null ? tA.extra_chances - tB.extra_chances : null, w:0.5, scale:3 },
+    { name:'Foul Trouble & FT%',  diff: tA.foul_ft_score != null && tB.foul_ft_score != null ? tA.foul_ft_score - tB.foul_ft_score : null,    w:1.0, scale:1.0 },
   ];
 
   let totalW = 0, aScore = 0;
   const edgesA = [], edgesB = [];
 
-  for (const m of metrics) {
-    const va = tA[m.fieldA], vb = tB[m.fieldB];
-    if (va == null || vb == null) continue;
-    const diff = m.hi ? (va - vb) : (vb - va);
-    const norm = Math.tanh(diff / 8);
+  for (const m of rawMetrics) {
+    if (m.diff == null) continue;
+    const norm = Math.tanh(m.diff / m.scale);
     aScore += norm * m.w;
     totalW += m.w;
-    if (Math.abs(diff) > 1.5) {
-      if (norm > 0) edgesA.push(m.name + ' (+' + Math.abs(diff).toFixed(1) + ')');
-      else          edgesB.push(m.name + ' (+' + Math.abs(diff).toFixed(1) + ')');
+    // Flag meaningful edges (norm > 0.3 = ~35% above neutral)
+    if (Math.abs(norm) > 0.3) {
+      const edgeStr = m.name + ' (+' + Math.abs(m.diff).toFixed(1) + ')';
+      if (norm > 0) edgesA.push(edgeStr);
+      else          edgesB.push(edgeStr);
     }
   }
 
@@ -135,7 +150,15 @@ function renderWinSummary(tA, tB) {
           '<div class="win-edges">' + pillsB + '</div>' +
         '</div>' +
       '</div>' +
-      '<div style="font-size:11px;color:#8fa3c0;margin-top:8px;text-align:center">Statistical baseline from BPR, AdjEM, efficiency ratings, ranked record, and close game %</div>' +
+      '<div style="font-size:11px;color:#8fa3c0;margin-top:8px;text-align:center;line-height:1.6">' +
+      '<strong style="color:#b0c4de">Model includes:</strong> ' +
+      'BPR &amp; AdjEM (core) · KP Off/Def · ' +
+      '<span style="color:#60a5fa">📊 Shot Chart edge</span> · ' +
+      '<span style="color:#f59e0b">💥 Killshot</span> · ' +
+      '<span style="color:#fb923c">🎯 Seed value</span> · ' +
+      '<span style="color:#4ade80">🏀 Foul/FT%</span> · ' +
+      'Ranked record · Close game%' +
+    '</div>' +
       '<div class="ai-bar" style="margin-top:14px">' +
         '<button class="ai-btn" id="ai-eff-btn">&#9881; AI Matchup Analysis</button>' +
         '<div id="ai-eff-output" class="ai-output hidden"></div>' +

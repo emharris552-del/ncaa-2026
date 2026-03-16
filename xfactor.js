@@ -131,11 +131,21 @@ function renderXFactor(tA, tB) {
     </div>
 
     <div class="xf-card">
-      ${secHead('🚨','Foul Trouble Risk')}
+      ${secHead('🚨','Foul Trouble & Free Throws')}
       ${ffHdr()}
       ${xRow('Fouls/Poss (committed)', tA.tr_fouls != null ? tA.tr_fouls*100 : null, tB.tr_fouls != null ? tB.tr_fouls*100 : null, tA.tr_fouls_rank, tB.tr_fouls_rank, false, 'pct')}
       ${xRow('Opp Fouls Drawn/Poss', tA.tr_opp_fouls != null ? tA.tr_opp_fouls*100 : null, tB.tr_opp_fouls != null ? tB.tr_opp_fouls*100 : null, tA.tr_opp_fouls_rank, tB.tr_opp_fouls_rank, true, 'pct')}
+      ${xRow('FT%', tA.ft, tB.ft, null, null, true, 'pct')}
+      ${xRow('FT Rate (FTA/FGA)', tA.off_ftr, tB.off_ftr, null, null, true, 'pct')}
+      ${xRow('% Points from FTs', tA.off_ft_pct, tB.off_ft_pct, null, null, true, 'pct')}
       ${xRow('Block%', tA.blk, tB.blk, null, null, true, 'pct')}
+      <div class="pace-insight" style="margin-top:8px">
+        <strong>Composite Score:</strong>
+        <span style="color:#60a5fa;font-weight:700"> ${tA.foul_ft_score != null ? (tA.foul_ft_score >= 0 ? '+' : '') + tA.foul_ft_score.toFixed(2) : '--'}</span>
+        <span style="color:#8fa3c0"> vs </span>
+        <span style="color:#f87171;font-weight:700">${tB.foul_ft_score != null ? (tB.foul_ft_score >= 0 ? '+' : '') + tB.foul_ft_score.toFixed(2) : '--'}</span>
+        <span style="color:#b0c4de;font-size:11px"> — positive = fewer fouls committed + draws fouls + makes FTs</span>
+      </div>
     </div>
 
     <div class="xf-card">

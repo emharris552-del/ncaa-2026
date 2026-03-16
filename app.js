@@ -198,12 +198,12 @@ function renderTeamHeader(elId, team, color) {
     ? `<img src="${logoUrl}" class="team-logo" alt="${team.name}" onerror="this.style.display='none'">`
     : '';
   const badges = getTeamBadges(team);
-  const SLIPPER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" width="16" height="10" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M58 28c-1-4-4-7-8-8L34 16c-4-1-8-5-8-9V5c0-1-1-2-2-2s-2 1-2 2v2c0 5 3 9 7 11l16 4c3 1 5 3 6 6l1 3H10c-2 0-4 1-5 3l-1 2h54l-1-6z" fill="#38bdf8" opacity="0.95"/><path d="M24 7c0 4 3 8 7 9" stroke="#7dd3fc" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M57 26l3-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M55 22l1-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M60 29l3 1" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
+  const SLIPPER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" width="16" height="10" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M58 28c-1-4-4-7-8-8L34 16c-4-1-8-5-8-9V5c0-1-1-2-2-2s-2 1-2 2v2c0 5 3 9 7 11l16 4c3 1 5 3 6 6l1 3H10c-2 0-4 1-5 3l-1 2h54l-1-6z" fill="#38bdf8" opacity="0.95"/><path d="M24 7c0 4 3 8 7 9" stroke="#7dd3fc" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M57 26l3-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M55 22l1-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M60 29l3 1" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>';
   const badgeHtml = badges.length
-    ? `<div class="th-badges">\${badges.map(b => {
-        const iconHtml = b.icon === 'SLIPPER' ? SLIPPER_SVG : b.icon + ' ';
-        return \`<span class="th-badge-pill" style="background:\${b.color}22;border-color:\${b.color}66;color:\${b.color}" title="\${b.tip}">\${iconHtml}\${b.label}</span>\`;
-      }).join('')}</div>`
+    ? '<div class="th-badges">' + badges.map(function(b) {
+        var iconHtml = b.icon === 'SLIPPER' ? SLIPPER_SVG : b.icon + ' ';
+        return '<span class="th-badge-pill" style="background:' + b.color + '22;border-color:' + b.color + '66;color:' + b.color + '" title="' + b.tip + '">' + iconHtml + b.label + '</span>';
+      }).join('') + '</div>'
     : '';
   el.innerHTML = `
     <div class="th-logo-name">

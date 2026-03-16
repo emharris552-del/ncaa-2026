@@ -289,7 +289,7 @@ function renderShooting(tA, tB) {
     '<div class="shooting-card">' + secHdr('Shooting Splits') +
       sRow('2P%',        tA.fg2,      tB.fg2,      true) +
       sRow('3P%',        tA.fg3,      tB.fg3,      true) +
-      sRow('FT%',        tA.ft_pct,   tB.ft_pct,   true) +
+      sRow('FT%',        tA.ft,       tB.ft,       true) +
       sRow('Off eFG%',   tA.off_efg,  tB.off_efg,  true) +
     '</div>' +
     '<div class="shooting-card">' + secHdr('Opponent Shooting') +
@@ -299,18 +299,14 @@ function renderShooting(tA, tB) {
     '</div>' +
     '<div class="shooting-card">' + secHdr('Shot Selection') +
       sRow('3pt Rate',   tA.fg3_rate, tB.fg3_rate, null) +
+      sRow('FT Rate',    tA.off_ftr,  tB.off_ftr,  true) +
       sRow('Block%',     tA.blk,      tB.blk,      true) +
       sRow('Steal Rate', tA.stl_rate != null ? tA.stl_rate*100 : null, tB.stl_rate != null ? tB.stl_rate*100 : null, true) +
     '</div>' +
     '<div class="shooting-card">' + secHdr('Point Distribution (Off)') +
-      sRow('% Pts from 2s', tA.off_2_pct, tB.off_2_pct, null) +
-      sRow('% Pts from 3s', tA.off_3_pct, tB.off_3_pct, null) +
+      sRow('% Pts from 2s', tA.off_2_pct,  tB.off_2_pct,  null) +
+      sRow('% Pts from 3s', tA.off_3_pct,  tB.off_3_pct,  null) +
       sRow('% Pts from FT', tA.off_ft_pct, tB.off_ft_pct, null) +
-    '</div>' +
-    '<div class="shooting-card">' + secHdr('Shooting %') +
-      sRow('2P%', tA.fg2, tB.fg2, true) +
-      sRow('3P%', tA.fg3, tB.fg3, true) +
-      sRow('FT%', tA.ft, tB.ft, true) +
     '</div>';
 }
 

@@ -639,24 +639,54 @@ function renderRoster(tA, tB) {
   const playersA = getPlayers(tA.name);
   const playersB = getPlayers(tB.name);
 
-  function playerList(players, color) {
+  function playerList(players, color, teamInjuries) {
     if (!players || !players.length) return '<p style="color:#8fa3c0;font-size:13px">Player data unavailable</p>';
-    return players.slice(0,6).map((p,i) =>
-      '<div class="player-row">' +
+    // Build injury lookup by last name (Covers uses "P. McCollum" style)
+    const injMap = {};
+    (teamInjuries || []).forEach(function(inj) {
+      const lastName = inj.player.split(' ').pop().toLowerCase();
+      injMap[lastName] = inj;
+    });
+    return players.slice(0,8).map(function(p,i) {
+      const pos = p.pos || '?';
+      const lastName = p.name.split(' ').pop().toLowerCase();
+      const injData = injMap[lastName];
+      const injBadge = injData
+        ? ' <span style="font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;background:' +
+          (injData.status==='Out' ? '#ef444433' : '#f59e0b33') + ';color:' +
+          (injData.status==='Out' ? '#f87171' : '#facc15') + ';border:1px solid ' +
+          (injData.status==='Out' ? '#f8717166' : '#facc1566') + '">' +
+          injData.status.toUpperCase() + '</span>'
+        : '';
+      return '<div class="player-row">' +
         '<span class="player-rank">' + (i+1) + '</span>' +
         '<div style="flex:1">' +
-          '<div class="player-name">' + p.name + '</div>' +
-          '<div class="player-splits">OBPR ' + p.obpr.toFixed(2) + ' &nbsp;·&nbsp; DBPR ' + p.dbpr.toFixed(2) + ' &nbsp;·&nbsp; ' + p.poss + ' poss</div>' +
+          '<div class="player-name">' + p.name +
+            ' <span style="font-size:10px;font-weight:700;color:#8fa3c0;background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px">' + pos + '</span>' +
+            injBadge +
+          '</div>' +
+          '<div class="player-splits">OFF ' + p.obpr.toFixed(2) + ' &nbsp;·&nbsp; DEF ' + p.dbpr.toFixed(2) + ' &nbsp;·&nbsp; ' + p.poss + ' poss</div>' +
         '</div>' +
         '<span class="player-bpr" style="color:' + color + '">' + p.bpr.toFixed(2) + '</span>' +
-      '</div>'
-    ).join('');
+      '</div>';
+    }).join('');
   }
 
   function injuryList(team) {
-    const injuries = team.injuries || [];
+    // Use injuries_list (live Covers.com data) not old injuries field
+    const rawList = team.injuries_list || team.injuries || [];
+    // Convert new format to display format
+    const injuries = rawList.map(function(inj) {
+      return {
+        player: inj.player || inj.name || '?',
+        position: inj.pos || inj.position || '',
+        injury: inj.injury || inj.type || 'Undisclosed',
+        status: inj.status || 'Questionable',
+        impact: null
+      };
+    });
     if (!injuries.length) {
-      return '<div style="padding:8px 0;font-size:13px;color:#4ade80">✓ No significant injuries reported</div>';
+      return '<div style="padding:8px 0;font-size:13px;color:#4ade80">✓ No injuries reported</div>';
     }
     function statusStyle(status) {
       if (!status) return { bg:'rgba(74,222,128,0.12)', text:'#86efac', dot:'#22c55e', badge:'#22c55e' };
@@ -712,8 +742,8 @@ function renderRoster(tA, tB) {
       '<div class="roster-card"><div class="roster-card-title" style="color:#f87171">Injury Report — ' + tB.name + '</div>' + injuryList(tB) + '</div>' +
     '</div>' +
     '<div class="roster-grid">' +
-      '<div class="roster-card"><div class="roster-card-title" style="color:#60a5fa">' + tA.name + ' — Top Players by BPR</div>' + playerList(playersA,'#60a5fa') + '</div>' +
-      '<div class="roster-card"><div class="roster-card-title" style="color:#f87171">' + tB.name + ' — Top Players by BPR</div>' + playerList(playersB,'#f87171') + '</div>' +
+      '<div class="roster-card"><div class="roster-card-title" style="color:#60a5fa">' + tA.name + ' — Top Players by BPR</div>' + playerList(playersA,'#60a5fa',tA.injuries_list) + '</div>' +
+      '<div class="roster-card"><div class="roster-card-title" style="color:#f87171">' + tB.name + ' — Top Players by BPR</div>' + playerList(playersB,'#f87171',tB.injuries_list) + '</div>' +
       '<div class="roster-card"><div class="roster-card-title">Size &amp; Depth</div>' +
         sizeRows.map(row =>
           '<div class="size-row">' +

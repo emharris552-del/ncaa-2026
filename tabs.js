@@ -65,6 +65,156 @@ function renderEfficiency(tA, tB) {
   renderPace(tA, tB);
 }
 
+
+// ── KEYS TO THE GAME ─────────────────────────────────────
+function generateKeysToGame(team, opp) {
+  const wins = [], loses = [];
+
+  // ── WIN CONDITIONS ────────────────────────────────────────
+  // Efficiency edge
+  if (team.bpr != null && opp.bpr != null) {
+    const diff = team.bpr - opp.bpr;
+    if (diff >= 4) wins.push({ text: 'Dominant overall rating edge (BPR +' + diff.toFixed(1) + ') — superior talent on both ends of the floor', s: diff });
+    else if (diff >= 1.5) wins.push({ text: 'Efficiency advantage (BPR +' + diff.toFixed(1) + ') — consistently outperforms opponents at this level', s: diff });
+  }
+
+  // Shot chart matchup
+  if (team.shot_off && opp.shot_def) {
+    const net = team.shot_off.efg - opp.shot_def.efg;
+    if (net >= 4) wins.push({ text: 'Favorable zone shooting matchup — shoots ' + team.shot_off.efg.toFixed(1) + '% eFG vs ' + opp.name + '\'s ' + opp.shot_def.efg.toFixed(1) + '% allowed', s: net });
+    else if (net >= 2) wins.push({ text: 'Zone-by-zone shooting edge (+' + net.toFixed(1) + '% eFG advantage in shot chart matchup)', s: net });
+  }
+
+  // Killshot / momentum runs
+  if (team.ks_margin != null && opp.ks_margin != null) {
+    const diff = team.ks_margin - opp.ks_margin;
+    if (diff >= 0.3) wins.push({ text: 'Controls momentum — killshot margin +' + diff.toFixed(3) + '/g means ' + team.name + ' regularly puts games away with decisive scoring runs', s: diff * 12 });
+    else if (diff >= 0.15) wins.push({ text: 'Edge in game-breaking runs (+' + diff.toFixed(3) + '/g killshot margin) — capable of blowing close games open', s: diff * 12 });
+  }
+
+  // Defense
+  if (team.def_efg != null && opp.def_efg != null) {
+    const diff = opp.def_efg - team.def_efg;
+    if (diff >= 4) wins.push({ text: 'Elite defense (' + team.def_efg.toFixed(1) + '% opp eFG) shuts down scoring — ' + diff.toFixed(1) + '% tighter than ' + opp.name + '\' defense', s: diff });
+    else if (diff >= 2) wins.push({ text: 'Defensive edge (' + team.def_efg.toFixed(1) + '% opp eFG vs ' + opp.def_efg.toFixed(1) + '%) — forces opponents into tough shots', s: diff });
+  }
+
+  // TO margin
+  if ((team.to_margin||0) >= 5) {
+    wins.push({ text: 'Turnover machine — net +' + (team.to_margin).toFixed(1) + '% margin means extra possessions every game. Aggressive defense will test ' + opp.name + '\' ball handlers', s: team.to_margin });
+  } else if (team.to_margin != null && opp.to_margin != null && (team.to_margin - opp.to_margin) >= 4) {
+    wins.push({ text: 'Ball security edge — TO margin ' + (team.to_margin - opp.to_margin).toFixed(1) + '% better than opponent translates to extra possessions', s: team.to_margin - opp.to_margin });
+  }
+
+  // Foul/FT
+  if (team.foul_ft_score != null && opp.foul_ft_score != null && (team.foul_ft_score - opp.foul_ft_score) >= 1.2) {
+    wins.push({ text: 'Free throw advantage — gets to the line (' + (team.off_ftr||0).toFixed(1) + '% FT rate) and converts (' + (team.ft||0).toFixed(1) + '%), while ' + opp.name + ' commits more fouls', s: (team.foul_ft_score - opp.foul_ft_score) * 3 });
+  }
+
+  // Clutch
+  if ((team.close_games_pct||0) >= 68 && (team.close_games_pct||0) > (opp.close_games_pct||50) + 15) {
+    wins.push({ text: 'Elite clutch performer (' + (team.close_games_pct).toFixed(0) + '% close game win rate) — thrives in the tight, pressure-filled games March demands', s: team.close_games_pct - 50 });
+  }
+
+  // Underseeded
+  if ((team.seed_bpr_diff||0) >= 2.0) {
+    wins.push({ text: 'Underseeded by ' + (team.seed_bpr_diff).toFixed(1) + ' BPR points — far better than their seed line suggests. Historically these teams advance 59% further', s: team.seed_bpr_diff * 2 });
+  }
+
+  // Hot form
+  if (team.conf_tourney_result === 'won' && (opp.conf_tourney_result !== 'won')) {
+    wins.push({ text: 'Conference tournament champion — enters on a winning streak, battle-tested and peaking at the right time', s: 5 });
+  }
+
+  // Opponent injuries
+  if ((opp.injury_score||0) <= -4) {
+    const outs = (opp.injuries_list||[]).filter(i=>i.status==='Out').map(i=>i.player);
+    wins.push({ text: opp.name + ' depleted by injuries (' + outs.slice(0,2).join(', ') + ' Out) — depth gaps and disrupted chemistry create exploitable mismatches', s: Math.abs(opp.injury_score) });
+  }
+
+  // Green flag from loss analysis
+  if (team.loss_green_flag && team.loss_green_flag.length > 10) {
+    wins.push({ text: team.loss_green_flag, s: 3 });
+  }
+
+  // Opp 3pt fragility
+  if ((opp.three_pt_reliability||0) <= -4 && (opp.fg3_rate||0) >= 48) {
+    wins.push({ text: opp.name + ' lives and dies by the three (' + (opp.fg3_rate).toFixed(0) + '% shot rate) — pressure the perimeter and one cold night eliminates them', s: 5 });
+  }
+
+  // Rebounding
+  if ((team.off_or||0) >= 38 && (team.extra_chances||0) > 3) {
+    wins.push({ text: 'Second-chance machine — ' + (team.off_or).toFixed(1) + '% offensive rebound rate generates ' + (team.extra_chances).toFixed(1) + ' extra chances per game over opponent', s: team.off_or - 30 });
+  }
+
+  // ── LOSS CONDITIONS ───────────────────────────────────────
+  // Own injuries
+  if ((team.injury_score||0) <= -4) {
+    const outs = (team.injuries_list||[]).filter(i=>i.status==='Out').map(i=>i.player);
+    const qs = (team.injuries_list||[]).filter(i=>i.status==='Questionable').map(i=>i.player);
+    const names = outs.map(n=>n+' (Out)').concat(qs.map(n=>n+' (Q)')).slice(0,3);
+    loses.push({ text: 'Injury concerns entering tournament — ' + names.join(', ') + '. Reduced depth and disrupted rotations at the worst possible time', s: Math.abs(team.injury_score) });
+  }
+
+  // 3pt dependency
+  if ((team.three_pt_reliability||0) <= -4 && (team.fg3_rate||0) >= 48) {
+    loses.push({ text: '3-point dependent offense (' + (team.fg3_rate).toFixed(0) + '% shot rate, reliability score ' + (team.three_pt_reliability).toFixed(1) + ') — tournament defenses close out hard and one cold night ends the run', s: Math.abs(team.three_pt_reliability) });
+  }
+
+  // Cold form
+  if ((team.recent_form||0) <= -5) {
+    const ctNote = ({ early: ' — early conf tourney exit', quarters: ' — lost in conf quarters', semi: ' — lost in conf semis' })[team.conf_tourney_result] || '';
+    loses.push({ text: 'Cold entering tournament (form ' + (team.recent_form).toFixed(1) + ')' + ctNote + ' — negative momentum and potential unresolved problems from late-season losses', s: Math.abs(team.recent_form) });
+  }
+
+  // Overseeded
+  if ((team.seed_bpr_diff||0) <= -3.0) {
+    loses.push({ text: 'Overseeded — BPR is ' + Math.abs(team.seed_bpr_diff).toFixed(1) + ' pts below seed expectation. Faces opponents who may be equally or more talented despite lower seeds', s: Math.abs(team.seed_bpr_diff) });
+  }
+
+  // TO liability
+  if ((team.to_margin||0) < -1.5 || (team.off_to||0) >= 18) {
+    loses.push({ text: 'Turnover prone — ' + ((team.off_to||0) >= 18 ? 'gives ball away on ' + (team.off_to).toFixed(1) + '% of possessions' : 'negative TO margin ' + (team.to_margin||0).toFixed(1) + '%') + '. Press defenses will force chaos', s: Math.max(Math.abs(team.to_margin||0), 3) });
+  }
+
+  // Foul trouble
+  if ((team.foul_ft_score||0) <= -1.2) {
+    loses.push({ text: 'Foul trouble risk — commits ' + ((team.tr_fouls||0)*100).toFixed(1) + '% of possessions in fouls. Key players in foul trouble is a recurring theme that derails their games', s: Math.abs(team.foul_ft_score||0) * 2 });
+  }
+
+  // Close game failures
+  if ((team.close_games_pct||50) < 42 && (team.close_games_pct||50) > 0) {
+    loses.push({ text: 'Poor clutch record — wins only ' + (team.close_games_pct).toFixed(0) + '% of close games. March Madness rewards teams who can execute in the final 5 minutes', s: 50 - team.close_games_pct });
+  }
+
+  // Defensive issues
+  if ((team.def_efg||0) >= 50) {
+    loses.push({ text: 'Defense allows ' + (team.def_efg).toFixed(1) + '% opp eFG — bottom half of the tournament field. Elite offenses will find rhythm quickly and score at will', s: team.def_efg - 46 });
+  }
+
+  // Opponent shot chart advantage
+  if (team.shot_def && opp.shot_off) {
+    const netDef = opp.shot_off.efg - team.shot_def.efg;
+    if (netDef >= 5) loses.push({ text: opp.name + ' exploits the shooting matchup — ' + opp.name + ' shoots ' + opp.shot_off.efg.toFixed(1) + '% eFG vs ' + team.name + '\'s ' + team.shot_def.efg.toFixed(1) + '% allowed. Favorable zone-by-zone for the opponent', s: netDef });
+  }
+
+  // Pace mismatch vulnerability
+  if (team.kp_adj_tempo != null && opp.kp_adj_tempo != null) {
+    const diff = opp.kp_adj_tempo - team.kp_adj_tempo;
+    if (diff >= 8) loses.push({ text: 'Pace mismatch — ' + opp.name + ' plays ' + diff.toFixed(0) + ' poss/g faster. Being pushed into an up-tempo game exposes ' + team.name + '\'s weaknesses in transition defense', s: diff * 0.8 });
+  }
+
+  // Red flag from loss analysis
+  if (team.loss_red_flag && team.loss_red_flag.length > 10) {
+    loses.push({ text: team.loss_red_flag, s: 4 });
+  }
+
+  wins.sort((a,b) => b.s - a.s);
+  loses.sort((a,b) => b.s - a.s);
+
+  return { wins: wins.slice(0, 3), loses: loses.slice(0, 3) };
+}
+
 // ── WIN PROBABILITY SUMMARY ───────────────────────────────
 function renderWinSummary(tA, tB) {
   const el = document.getElementById('win-summary-section');
@@ -98,6 +248,7 @@ function renderWinSummary(tA, tB) {
     { name:'Turnover Margin',     diff: tA.to_margin != null && tB.to_margin != null ? tA.to_margin - tB.to_margin : null,                        w:1.2, scale:4.0 },
     { name:'Recent Form',         diff: tA.recent_form != null && tB.recent_form != null ? tA.recent_form - tB.recent_form : null,                  w:1.0, scale:5.0 },
     { name:'3pt Reliability',     diff: tA.three_pt_reliability != null && tB.three_pt_reliability != null ? tA.three_pt_reliability - tB.three_pt_reliability : null, w:0.6, scale:3.0 },
+    { name:'Injury Impact',        diff: (tA.injury_score != null && tB.injury_score != null) ? (tA.injury_score - tB.injury_score) : null, w:1.0, scale:2.0 },
   ];
 
   let totalW = 0, aScore = 0;
@@ -119,6 +270,48 @@ function renderWinSummary(tA, tB) {
   const probA = totalW > 0 ? Math.round((1/(1+Math.exp(-(aScore/totalW)*3.5)))*100) : 50;
   const probB = 100 - probA;
   const colorA = '#60a5fa', colorB = '#f87171';
+
+  // Pre-compute Keys to the Game
+  const keysA = generateKeysToGame(tA, tB);
+  const keysB = generateKeysToGame(tB, tA);
+
+  function ktgBullet(item, color) {
+    return '<li><span style="color:' + color + ';font-weight:700">→ </span>' + item.text + '</li>';
+  }
+  const ktgHtml =
+    '<div class="keys-to-game">' +
+      '<div class="ktg-title">🔑 Keys to the Game</div>' +
+      '<div class="ktg-grid">' +
+        '<div class="ktg-col">' +
+          '<div class="ktg-team-hdr" style="color:' + colorA + '">' +
+            (getLogoUrl(tA.name) ? '<img src="' + getLogoUrl(tA.name) + '" class="team-logo-sm" alt="" onerror="this.style.display=\'none\'">' : '') +
+            ' ' + tA.name +
+          '</div>' +
+          '<div class="ktg-section">' +
+            '<div class="ktg-section-hdr win">✅ How they WIN</div>' +
+            '<ul class="ktg-list">' + (keysA.wins.length ? keysA.wins.map(i=>ktgBullet(i,colorA)).join('') : '<li style="color:#8fa3c0;font-size:12px">Calculating...</li>') + '</ul>' +
+          '</div>' +
+          '<div class="ktg-section">' +
+            '<div class="ktg-section-hdr lose">⚠️ How they LOSE</div>' +
+            '<ul class="ktg-list">' + (keysA.loses.length ? keysA.loses.map(i=>ktgBullet(i,'#f87171')).join('') : '<li style="color:#8fa3c0;font-size:12px">Calculating...</li>') + '</ul>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ktg-col">' +
+          '<div class="ktg-team-hdr" style="color:' + colorB + '">' +
+            (getLogoUrl(tB.name) ? '<img src="' + getLogoUrl(tB.name) + '" class="team-logo-sm" alt="" onerror="this.style.display=\'none\'">' : '') +
+            ' ' + tB.name +
+          '</div>' +
+          '<div class="ktg-section">' +
+            '<div class="ktg-section-hdr win">✅ How they WIN</div>' +
+            '<ul class="ktg-list">' + (keysB.wins.length ? keysB.wins.map(i=>ktgBullet(i,colorB)).join('') : '<li style="color:#8fa3c0;font-size:12px">Calculating...</li>') + '</ul>' +
+          '</div>' +
+          '<div class="ktg-section">' +
+            '<div class="ktg-section-hdr lose">⚠️ How they LOSE</div>' +
+            '<ul class="ktg-list">' + (keysB.loses.length ? keysB.loses.map(i=>ktgBullet(i,'#f87171')).join('') : '<li style="color:#8fa3c0;font-size:12px">Calculating...</li>') + '</ul>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
 
   const logoA = getLogoUrl(tA.name) ? '<img src="' + getLogoUrl(tA.name) + '" class="team-logo-sm" alt="" onerror="this.style.display=\'none\'">' : '';
   const logoB = getLogoUrl(tB.name) ? '<img src="' + getLogoUrl(tB.name) + '" class="team-logo-sm" alt="" onerror="this.style.display=\'none\'">' : '';
@@ -163,8 +356,10 @@ function renderWinSummary(tA, tB) {
       '<span style="color:#a78bfa">↕ TO Margin</span> · ' +
       '<span style="color:#34d399">🔥 Recent Form</span> · ' +
       '<span style="color:#fbbf24">🎲 3pt Risk</span> · ' +
+      '<span style="color:#f87171">🩹 Injuries</span> · ' +
       'Ranked record · Close game%' +
     '</div>' +
+      ktgHtml +
       '<div class="ai-bar" style="margin-top:14px">' +
         '<button class="ai-btn" id="ai-eff-btn">&#9881; AI Matchup Analysis</button>' +
         '<div id="ai-eff-output" class="ai-output hidden"></div>' +
@@ -459,26 +654,50 @@ function renderRoster(tA, tB) {
   }
 
   function injuryList(team) {
-    const inj = team.injuries || [];
-    const significant = inj.filter(i => i.impact !== 'none');
-    if (!significant.length) return '<div style="padding:8px 0;font-size:13px;color:#4ade80">No significant injuries reported</div>';
-    const colors = {
-      'OUT':       { bg:'rgba(239,68,68,0.15)',   text:'#fca5a5', dot:'#ef4444' },
-      'GAME-TIME': { bg:'rgba(251,191,36,0.15)',   text:'#fde68a', dot:'#f59e0b' },
-      'AVAILABLE': { bg:'rgba(74,222,128,0.12)',   text:'#86efac', dot:'#22c55e' },
-    };
-    return significant.map(inj => {
-      const c = colors[inj.status] || colors['AVAILABLE'];
-      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:' + c.bg + ';border-radius:6px;margin-bottom:6px">' +
-        '<span style="color:' + c.dot + ';margin-top:2px;font-size:10px">●</span>' +
-        '<div>' +
-          '<div style="font-size:13px;font-weight:600;color:' + c.text + '">' + inj.player +
-            '<span style="font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:800;margin-left:6px;padding:1px 7px;border-radius:3px;background:' + c.dot + ';color:#000">' + inj.status + '</span>' +
+    const injuries = team.injuries || [];
+    if (!injuries.length) {
+      return '<div style="padding:8px 0;font-size:13px;color:#4ade80">✓ No significant injuries reported</div>';
+    }
+    function statusStyle(status) {
+      if (!status) return { bg:'rgba(74,222,128,0.12)', text:'#86efac', dot:'#22c55e', badge:'#22c55e' };
+      const s = status.toUpperCase();
+      if (s.includes('OUT FOR SEASON') || s.includes('SEASON-ENDING'))
+        return { bg:'rgba(239,68,68,0.15)', text:'#fca5a5', dot:'#ef4444', badge:'#ef4444' };
+      if (s.includes('OUT'))
+        return { bg:'rgba(239,68,68,0.12)', text:'#fca5a5', dot:'#ef4444', badge:'#ef4444' };
+      if (s.includes('QUESTIONABLE') || s.includes('DOUBTFUL'))
+        return { bg:'rgba(251,191,36,0.12)', text:'#fde68a', dot:'#f59e0b', badge:'#f59e0b' };
+      if (s.includes('EXPECTED') || s.includes('AVAILABLE'))
+        return { bg:'rgba(74,222,128,0.10)', text:'#86efac', dot:'#22c55e', badge:'#22c55e' };
+      return { bg:'rgba(148,163,184,0.10)', text:'#cbd5e1', dot:'#94a3b8', badge:'#94a3b8' };
+    }
+    const alertColor = team.alert_level === 'critical' ? '#ef4444' :
+                       team.alert_level === 'high' ? '#f97316' :
+                       team.alert_level === 'medium' ? '#f59e0b' : '#22c55e';
+    let html = '';
+    if (team.injury_summary) {
+      html += '<div style="margin-bottom:8px;padding:8px 10px;background:' + alertColor + '18;border-left:3px solid ' + alertColor + ';border-radius:4px;font-size:12px;color:#e8edf5">' + team.injury_summary + '</div>';
+    }
+    html += injuries.map(inj => {
+      const c = statusStyle(inj.status);
+      const badgeText = (inj.status||'').split('—')[0].trim() || inj.status;
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:' + c.bg + ';border-radius:6px;margin-bottom:6px">' +
+        '<span style="color:' + c.dot + ';margin-top:3px;font-size:12px">●</span>' +
+        '<div style="flex:1">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">' +
+            '<span style="font-size:13px;font-weight:700;color:' + c.text + '">' + inj.player + '</span>' +
+            (inj.position ? '<span style="font-size:10px;color:#8fa3c0">' + inj.position + '</span>' : '') +
+            (inj.stats ? '<span style="font-size:10px;color:#8fa3c0">' + inj.stats + '</span>' : '') +
           '</div>' +
-          '<div style="font-size:11px;color:#b0c4de;margin-top:2px">' + inj.note + '</div>' +
+          '<div style="font-size:12px;color:#b0c4de;margin-bottom:3px"><strong>' + (inj.injury||'') + '</strong></div>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+            '<span style="font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:800;padding:1px 7px;border-radius:3px;background:' + c.badge + ';color:#000">' + badgeText + '</span>' +
+          '</div>' +
+          (inj.impact ? '<div style="font-size:11px;color:#94a3b8;line-height:1.4">' + inj.impact + '</div>' : '') +
         '</div>' +
       '</div>';
     }).join('');
+    return html;
   }
 
   const sizeRows = [

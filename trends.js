@@ -62,10 +62,25 @@ const ADDITIONAL_TRENDS = [
     bgColor: 'rgba(52,211,153,0.1)',
     borderColor: 'rgba(52,211,153,0.3)',
     historicalNote: '14 of the last 15 national champions came from the ACC, Big Ten, Big 12, or SEC. Non-power conference teams have reached the Final Four only 4 times since 2010.',
-    getTeams: (teams) => Object.values(teams)
-      .filter(t => ['ACC','B10','B12','SEC','BE'].some(c => ['Duke','Michigan','Florida','Arizona','Purdue','Houston','Iowa State','Alabama','Virginia','Illinois','Gonzaga','UConn','Tennessee','North Carolina','Texas Tech','Nebraska','Kansas','UCLA','Kentucky','Georgia','Texas','Ohio State','Michigan State','St. John\'s','Iowa','Vanderbilt','Clemson','BYU','Wisconsin','Arkansas','Texas A&M','Missouri','SMU','Louisville','NC State','Miami FL'].includes(t.name)))
-      .sort((a,b) => (a.em_rank||999) - (b.em_rank||999))
-      .map(t => ({...t, score: 1.0, matched: ['Power Conference Team']}))
+    getTeams: (teams) => {
+      // 2025-26 Power Conference members in the tournament field
+      const POWER_CONF = new Set([
+        // ACC
+        'Duke','Louisville','Clemson','North Carolina','Miami FL','NC State','Virginia',
+        // Big Ten
+        'Michigan','Michigan State','Ohio State','Illinois','Purdue','Nebraska','Iowa','Wisconsin','UCLA',
+        // Big 12
+        'Iowa State','Houston','Kansas','BYU','Texas Tech','TCU','UCF','Texas','Arkansas',
+        // SEC
+        'Florida','Alabama','Tennessee','Kentucky','Vanderbilt','Georgia','Texas A&M','Missouri',
+        // Big East
+        "St. John's",'UConn','Villanova'
+      ]);
+      return Object.values(teams)
+        .filter(t => POWER_CONF.has(t.name))
+        .sort((a,b) => (a.em_rank||999) - (b.em_rank||999))
+        .map(t => ({...t, score: 1.0, matched: ['Power Conference Team']}));
+    }
   },
   {
     key: 'conference_tourney_momentum',
@@ -76,9 +91,9 @@ const ADDITIONAL_TRENDS = [
     borderColor: 'rgba(251,146,60,0.3)',
     historicalNote: 'Teams that won their conference tournament have reached the Sweet 16 at 64% clip since 2015. Teams exiting in the first round of their conference tournament make the Sweet 16 only 28% of the time.',
     getTeams: (teams) => Object.values(teams)
-      .filter(t => t.seed <= 4 && (t.adj_em_rank||999) <= 25)
-      .sort((a,b) => (a.seed||9) - (b.seed||9))
-      .map(t => ({...t, score: 0.85, matched: ['Top seed + Top 25 AdjEM (likely conf champion)']}))
+      .filter(t => t.conf_tourney_result === 'won' && t.seed <= 12)
+      .sort((a,b) => (a.em_rank||999) - (b.em_rank||999))
+      .map(t => ({...t, score: 0.9, matched: ['Conference Tournament Champion', `Seed: ${t.seed}`]}))
   },
   {
     key: 'two_way_dominance',

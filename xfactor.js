@@ -1,5 +1,35 @@
 // xfactor.js — X-Factor tab
 
+function injuryCard(t, color) {
+  const inj = t.injuries_list || [];
+  const score = t.injury_score || 0;
+  const activeInj = inj.filter(i => i.injury !== 'Redshirt');
+  const outs = activeInj.filter(i => i.status === 'Out');
+  const qs   = activeInj.filter(i => i.status === 'Questionable');
+
+  const statusColor = score <= -4 ? '#f87171' : score <= -2 ? '#fb923c' : score <= -1 ? '#facc15' : '#4ade80';
+  const statusLabel = score <= -4 ? '🔴 Significant Concerns' : score <= -2 ? '🟠 Some Concerns' : score <= -1 ? '🟡 Minor Questions' : '🟢 Healthy';
+
+  function injRow(inj) {
+    const c = inj.status === 'Out' ? '#f87171' : '#facc15';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+      '<span style="font-size:12px;color:#e8edf5">' + inj.player + ' (' + inj.pos + ')</span>' +
+      '<span style="font-size:11px;font-weight:700;color:' + c + '">' + inj.status + ' — ' + inj.injury + '</span>' +
+    '</div>';
+  }
+
+  return '<div style="background:var(--bg3);border-radius:var(--radius);padding:10px;border:1px solid ' + color + '33">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<strong style="color:' + color + ';font-family:\'Barlow Condensed\';font-size:15px">' + t.name + '</strong>' +
+      '<span style="font-size:11px;font-weight:700;color:' + statusColor + '">' + statusLabel + '</span>' +
+    '</div>' +
+    (activeInj.length === 0
+      ? '<div style="font-size:12px;color:#4ade80">✓ No active injuries reported</div>'
+      : activeInj.map(injRow).join('')) +
+    (activeInj.length > 0 ? '<div style="font-size:11px;color:#b0c4de;margin-top:6px">Impact score: ' + score + ' (Out=-2, Questionable=-1 per player)</div>' : '') +
+  '</div>';
+}
+
 function renderXFactor(tA, tB) {
   const el = document.getElementById('xfactor-content');
   if (!el) return;
@@ -173,6 +203,15 @@ function renderXFactor(tA, tB) {
       <div style="margin:14px 0 6px;font-size:11px;color:#556882;text-transform:uppercase;letter-spacing:1px">2nd Half Margin</div>
       ${halfSplits(tA, '#60a5fa', 2)}
       ${halfSplits(tB, '#f87171', 2)}
+    </div>
+
+    <div class="xf-card" style="grid-column:1/-1">
+      ${secHead('🩹','Health & Injury Status (live)')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${injuryCard(tA,'#60a5fa')}
+        ${injuryCard(tB,'#f87171')}
+      </div>
+      <div style="font-size:11px;color:#8fa3c0;margin-top:8px">Source: Covers.com injury report. Redshirt players excluded. Score: Out=-2, Questionable=-1 per player.</div>
     </div>
   `;
 }

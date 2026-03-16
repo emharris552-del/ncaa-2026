@@ -16,7 +16,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
 
     if (btn.dataset.view === 'bracket') renderBracket();
-    if (btn.dataset.view === 'standings') { if(_stSubTab==='rankings') renderStandings(); else if(_stSubTab==='seedanalysis') renderSeedAnalysis(); else if(_stSubTab==='upsethistory') renderUpsetHistory(); }
+    if (btn.dataset.view === 'standings') { if(_stSubTab==='rankings') renderStandings(); else if(_stSubTab==='seedanalysis') renderSeedAnalysis(); else if(_stSubTab==='upsethistory') renderUpsetHistory(); else if(_stSubTab==='losspatterns') renderLossPatterns(); }
     if (btn.dataset.view === 'trends') renderTrends();
     if (btn.dataset.view === 'betting') renderBettingPage();
   });
@@ -262,7 +262,7 @@ KEY STATS:
 ${tA.name}: EvanMiya rank #${tA.em_rank}, BPR ${tA.bpr?.toFixed(2)}, Torvik AdjEM ${tA.adj_em?.toFixed(1)} (#${tA.adj_em_rank}), AdjOE ${tA.adj_oe?.toFixed(1)}, AdjDE ${tA.adj_de?.toFixed(1)}, Tempo ${tA.kp_adj_tempo?.toFixed(1)} poss/g (#${tA.kp_adj_tempo_rank}), Pace Adjust: ${tA.pace_adjust?.toFixed(1)}
 ${tB.name}: EvanMiya rank #${tB.em_rank}, BPR ${tB.bpr?.toFixed(2)}, Torvik AdjEM ${tB.adj_em?.toFixed(1)} (#${tB.adj_em_rank}), AdjOE ${tB.adj_oe?.toFixed(1)}, AdjDE ${tB.adj_de?.toFixed(1)}, Tempo ${tB.kp_adj_tempo?.toFixed(1)} poss/g (#${tB.kp_adj_tempo_rank}), Pace Adjust: ${tB.pace_adjust?.toFixed(1)}
 
-Give a sharp 3-4 paragraph analysis: overall balance of power, offensive/defensive matchup keys, pace dynamics and which team benefits, and your overall take on who has the edge and why. Be specific with the numbers, not generic.`;
+Give a sharp 3-4 paragraph analysis covering: overall balance of power (BPR/AdjEM), offensive/defensive matchup keys, pace dynamics, and the killshot/momentum edge. Include how each team's seed value (underseeded vs overseeded) affects tournament expectations. Be specific with numbers, not generic.`;
 }
 
 function ffPrompt(tA, tB) {
@@ -318,6 +318,7 @@ document.querySelectorAll('[data-stnav]').forEach(btn => {
     if (_stSubTab === 'rankings')     renderStandings();
     if (_stSubTab === 'seedanalysis') renderSeedAnalysis();
     if (_stSubTab === 'upsethistory') renderUpsetHistory();
+    if (_stSubTab === 'losspatterns') renderLossPatterns();
   });
 });
 

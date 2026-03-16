@@ -19,6 +19,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (btn.dataset.view === 'standings') { if(_stSubTab==='rankings') renderStandings(); else if(_stSubTab==='seedanalysis') renderSeedAnalysis(); else if(_stSubTab==='upsethistory') renderUpsetHistory(); else if(_stSubTab==='losspatterns') renderLossPatterns(); }
     if (btn.dataset.view === 'trends') renderTrends();
     if (btn.dataset.view === 'betting') renderBettingPage();
+    if (btn.dataset.view === 'mybracket') renderMyBracket();
   });
 });
 
@@ -134,11 +135,75 @@ function renderMatchup(tA, tB) {
   renderTab(activeTab, tA, tB);
 }
 
+function getTeamBadges(t) {
+  if (!t) return [];
+  const seed = t.seed || 16;
+  const diff = t.seed_bpr_diff || 0;
+  const form = t.recent_form || 0;
+  const inj  = t.injury_score || 0;
+  const conf = t.conf_tourney_result || '';
+  const adj_oe = t.adj_oe_rank || 999;
+  const adj_de = t.adj_de_rank || 999;
+  const off_efg = t.off_efg || 0;
+  const def_efg = t.def_efg || 99;
+  const tempo_rank = t.kp_adj_tempo_rank || 0;
+  const adj_em = t.adj_em_rank || 999;
+  const badges = [];
+
+  // Seed analysis
+  if (seed <= 12) {
+    if (diff >= 3.0)       badges.push({ icon:'⬆️', label:'VERY UNDERSEEDED', color:'#f59e0b', tip:`+${diff.toFixed(1)} BPR above seed avg — historically advances 59% further` });
+    else if (diff >= 1.5)  badges.push({ icon:'⬆️', label:'UNDERSEEDED',      color:'#fb923c', tip:`+${diff.toFixed(1)} BPR above seed avg — better than seed suggests` });
+    else if (diff <= -3.0 && seed <= 10) badges.push({ icon:'⬇️', label:'OVERSEEDED', color:'#f87171', tip:`${diff.toFixed(1)} BPR below seed avg — significant upset risk` });
+    else if (diff <= -2.0 && seed <= 10) badges.push({ icon:'⬇️', label:'OVERSEEDED', color:'#f87171', tip:`${diff.toFixed(1)} BPR below seed avg — weaker than seed` });
+  }
+
+  // Cinderella
+  if (seed >= 11 && adj_em <= 80)
+    badges.push({ icon:'SLIPPER', label:'CINDERELLA', color:'#38bdf8', tip:`#${adj_em} AdjEM — elite analytics for a ${seed}-seed` });
+
+  // Injuries
+  if (inj <= -4)      badges.push({ icon:'🩹', label:'INJURY CONCERN', color:'#f87171', tip:`${t.injury_count} key players out/questionable` });
+  else if (inj <= -2) badges.push({ icon:'🩹', label:'INJURED',        color:'#fb923c', tip:`${t.injury_count} player(s) out or questionable` });
+
+  // Momentum
+  if (conf === 'won' && seed <= 8)
+    badges.push({ icon:'🏆', label:'CONF CHAMP', color:'#f59e0b', tip:'Won conference tournament — entering hot' });
+  else if (conf === 'won' && seed >= 9 && form > 1)
+    badges.push({ icon:'📈', label:'PEAKING', color:'#4ade80', tip:'Won conf tourney + positive recent form' });
+
+  if (form > 3 && seed <= 11 && conf !== 'won')
+    badges.push({ icon:'🔥', label:'HOT', color:'#ef4444', tip:`Recent form +${form.toFixed(1)} — playing best basketball lately` });
+  else if (form < -6 && seed <= 8)
+    badges.push({ icon:'❄️', label:'COLD', color:'#60a5fa', tip:`Recent form ${form.toFixed(1)} — struggling entering tournament` });
+
+  // Playing style
+  if (adj_oe <= 20 && adj_de <= 20)
+    badges.push({ icon:'⚔️', label:'TWO-WAY', color:'#34d399', tip:`Top-20 offense (#${adj_oe}) AND defense (#${adj_de})` });
+  else if (off_efg >= 55 && seed <= 8)
+    badges.push({ icon:'🎯', label:'ELITE OFF', color:'#60a5fa', tip:`${off_efg.toFixed(1)}% eFG — elite shooting team` });
+  else if (def_efg < 46 && seed <= 8)
+    badges.push({ icon:'🔒', label:'LOCKDOWN',  color:'#a78bfa', tip:`${def_efg.toFixed(1)}% opp eFG — elite defensive team` });
+
+  if (tempo_rank >= 290 && seed <= 10)
+    badges.push({ icon:'🐢', label:'SLOW PACE', color:'#e879f9', tip:`#${tempo_rank} tempo — game control, under lean` });
+
+  return badges.slice(0, 4);
+}
+
 function renderTeamHeader(elId, team, color) {
   const el = document.getElementById(elId);
   const logoUrl = getLogoUrl(team.name);
   const logoHtml = logoUrl
     ? `<img src="${logoUrl}" class="team-logo" alt="${team.name}" onerror="this.style.display='none'">`
+    : '';
+  const badges = getTeamBadges(team);
+  const SLIPPER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" width="16" height="10" style="display:inline;vertical-align:middle;margin-right:2px"><path d="M58 28c-1-4-4-7-8-8L34 16c-4-1-8-5-8-9V5c0-1-1-2-2-2s-2 1-2 2v2c0 5 3 9 7 11l16 4c3 1 5 3 6 6l1 3H10c-2 0-4 1-5 3l-1 2h54l-1-6z" fill="#38bdf8" opacity="0.95"/><path d="M24 7c0 4 3 8 7 9" stroke="#7dd3fc" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M57 26l3-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M55 22l1-3" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M60 29l3 1" stroke="#fde047" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`;
+  const badgeHtml = badges.length
+    ? `<div class="th-badges">\${badges.map(b => {
+        const iconHtml = b.icon === 'SLIPPER' ? SLIPPER_SVG : b.icon + ' ';
+        return \`<span class="th-badge-pill" style="background:\${b.color}22;border-color:\${b.color}66;color:\${b.color}" title="\${b.tip}">\${iconHtml}\${b.label}</span>\`;
+      }).join('')}</div>`
     : '';
   el.innerHTML = `
     <div class="th-logo-name">
@@ -156,6 +221,7 @@ function renderTeamHeader(elId, team, color) {
           ${team.kp_adj_tempo ? `<span class="th-badge">${team.kp_adj_tempo.toFixed(1)} poss/g (#${team.kp_adj_tempo_rank})</span>` : ''}
         </div>
       </div>
+      ${badgeHtml}
     </div>`;
 }
 
@@ -334,3 +400,5 @@ document.getElementById('search-a').value = 'Duke';
 document.getElementById('search-b').value = 'UConn';
 selectTeam('a', 'Duke');
 selectTeam('b', 'UConn');
+// Pre-render My Bracket
+renderMyBracket();

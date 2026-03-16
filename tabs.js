@@ -95,6 +95,9 @@ function renderWinSummary(tA, tB) {
     { name:'Seed Value',          diff: tA.seed_bpr_diff != null && tB.seed_bpr_diff != null ? tA.seed_bpr_diff - tB.seed_bpr_diff : null, w:0.75, scale:3 },
     { name:'Extra Chances',       diff: tA.extra_chances != null && tB.extra_chances != null ? tA.extra_chances - tB.extra_chances : null, w:0.5, scale:3 },
     { name:'Foul Trouble & FT%',  diff: tA.foul_ft_score != null && tB.foul_ft_score != null ? tA.foul_ft_score - tB.foul_ft_score : null,    w:1.0, scale:1.0 },
+    { name:'Turnover Margin',     diff: tA.to_margin != null && tB.to_margin != null ? tA.to_margin - tB.to_margin : null,                        w:1.2, scale:4.0 },
+    { name:'Recent Form',         diff: tA.recent_form != null && tB.recent_form != null ? tA.recent_form - tB.recent_form : null,                  w:1.0, scale:5.0 },
+    { name:'3pt Reliability',     diff: tA.three_pt_reliability != null && tB.three_pt_reliability != null ? tA.three_pt_reliability - tB.three_pt_reliability : null, w:0.6, scale:3.0 },
   ];
 
   let totalW = 0, aScore = 0;
@@ -157,6 +160,9 @@ function renderWinSummary(tA, tB) {
       '<span style="color:#f59e0b">💥 Killshot</span> · ' +
       '<span style="color:#fb923c">🎯 Seed value</span> · ' +
       '<span style="color:#4ade80">🏀 Foul/FT%</span> · ' +
+      '<span style="color:#a78bfa">↕ TO Margin</span> · ' +
+      '<span style="color:#34d399">🔥 Recent Form</span> · ' +
+      '<span style="color:#fbbf24">🎲 3pt Risk</span> · ' +
       'Ranked record · Close game%' +
     '</div>' +
       '<div class="ai-bar" style="margin-top:14px">' +

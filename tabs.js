@@ -249,6 +249,10 @@ function renderWinSummary(tA, tB) {
     { name:'Recent Form',         diff: tA.recent_form != null && tB.recent_form != null ? tA.recent_form - tB.recent_form : null,                  w:1.0, scale:5.0 },
     { name:'3pt Reliability',     diff: tA.three_pt_reliability != null && tB.three_pt_reliability != null ? tA.three_pt_reliability - tB.three_pt_reliability : null, w:0.6, scale:3.0 },
     { name:'Injury Impact',        diff: (tA.injury_score != null && tB.injury_score != null) ? (tA.injury_score - tB.injury_score) : null, w:1.0, scale:2.0 },
+    // 150-Mile Rule: +1 for within 150mi, 0 otherwise (binary proximity advantage, Clay et al. 2014)
+    { name:'Home Proximity',       diff: (() => { const a = tA.within_150mi ? 1 : 0; const b = tB.within_150mi ? 1 : 0; return (a !== b) ? a - b : null; })(), w:1.2, scale:1.0 },
+    // Eastward Curse: penalty for crossing 2+ time zones east
+    { name:'Time Zone Advantage',  diff: (() => { const a = -(tA.tz_zones_east||0); const b = -(tB.tz_zones_east||0); return (a !== b) ? a - b : null; })(), w:0.8, scale:2.0 },
   ];
 
   let totalW = 0, aScore = 0;

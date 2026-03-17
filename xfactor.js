@@ -213,7 +213,52 @@ function renderXFactor(tA, tB) {
       </div>
       <div style="font-size:11px;color:#8fa3c0;margin-top:8px">Source: Covers.com injury report. Redshirt players excluded. Score: Out=-2, Questionable=-1 per player.</div>
     </div>
+
+    <!-- Travel & Geography Card -->
+    <div style="background:var(--bg2);border-radius:var(--radius);padding:14px;border:1px solid rgba(255,255,255,0.06);margin-top:12px">
+      <div style="font-size:11px;color:#556882;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">✈️ Travel & Geography (2026 First/Second Round)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${travelCard(tA,'#60a5fa')}
+        ${travelCard(tB,'#f87171')}
+      </div>
+      <div style="font-size:11px;color:#8fa3c0;margin-top:8px">Source: Clay, Bro & Clay (2014) — 3,296 NCAA Tournament game performances. 150-mile rule: -33.6% win odds outside radius. Eastward travel 2+ zones: win rate drops below 38%.</div>
+    </div>
   `;
+}
+
+function travelCard(t, color) {
+  const miles = t.travel_miles != null ? t.travel_miles : null;
+  const within = t.within_150mi === true;
+  const tzEast = t.tz_zones_east || 0;
+  const campusTZ = t.campus_tz || '?';
+  const venueTZ  = t.venue_tz  || '?';
+  const venueName = t.venue_city || 'unknown';
+
+  const distLabel = miles != null ? miles + ' miles' : 'N/A';
+  const homeBadge = within
+    ? '<span style="color:#4ade80;font-weight:700">🏠 HOME ADVANTAGE</span>'
+    : miles != null && miles < 300
+      ? '<span style="color:#a3e635;font-weight:700">📍 Near-Home (&lt;300mi)</span>'
+      : '<span style="color:#8fa3c0">🚌 Traveling</span>';
+
+  let tzBadge = '';
+  if (tzEast >= 2) {
+    tzBadge = '<div style="margin-top:5px"><span style="color:#f43f5e;font-weight:700">⚠️ EASTWARD CURSE: ' + campusTZ + '→' + venueTZ + ' (+' + tzEast + ' zones) — win rate &lt;38%</span></div>';
+  } else if (tzEast === 1) {
+    tzBadge = '<div style="margin-top:5px"><span style="color:#facc15;font-weight:600">⚡ 1 time zone east (' + campusTZ + '→' + venueTZ + ') — mild disadvantage</span></div>';
+  } else if (campusTZ !== venueTZ) {
+    tzBadge = '<div style="margin-top:5px"><span style="color:#94a3b8">Traveling west (' + campusTZ + '→' + venueTZ + ') — minimal penalty</span></div>';
+  } else {
+    tzBadge = '<div style="margin-top:5px"><span style="color:#4ade80">✓ Same time zone (' + campusTZ + ')</span></div>';
+  }
+
+  return '<div style="background:var(--bg3);border-radius:var(--radius);padding:10px;border:1px solid ' + color + '33">' +
+    '<div style="margin-bottom:6px"><strong style="color:' + color + ';font-family:\'Barlow Condensed\';font-size:15px">' + t.name + '</strong></div>' +
+    '<div style="font-size:12px;color:#e8edf5">Playing in: <strong>' + venueName + '</strong></div>' +
+    '<div style="font-size:12px;color:#b0c4de;margin-top:3px">Distance: ' + distLabel + '</div>' +
+    '<div style="margin-top:5px">' + homeBadge + '</div>' +
+    tzBadge +
+  '</div>';
 }
 
 function xfPrompt(tA, tB) {

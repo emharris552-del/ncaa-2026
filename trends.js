@@ -160,6 +160,45 @@ const ADDITIONAL_TRENDS = [
       .sort((a,b) => (a.adj_em_rank||999) - (b.adj_em_rank||999))
       .map(t => ({...t, score: 0.75, matched: [`Seed: ${t.seed}`, `AdjEM #${t.adj_em_rank}`]}))
   },
+  {
+    key: 'at_large_losing_conf',
+    icon: '⚠️',
+    label: 'At-Large Teams With Losing Conference Record',
+    color: '#f87171',
+    bgColor: 'rgba(239,68,68,0.1)',
+    borderColor: 'rgba(239,68,68,0.3)',
+    historicalNote: "In the past 3 years, 10 at-large teams with sub-.500 conference records entered the tournament. Eight of those 10 failed to win a single game. Only Arkansas beat the odds — reaching the Sweet 16 both as an 8-seed (2023) and a 10-seed (2025). This year SMU (8-10 in the ACC) is the only at-large team with a losing conference record.",
+    getTeams: (teams) => Object.values(teams)
+      .filter(t => t.conf_w != null && t.conf_l != null && t.conf_l > t.conf_w)
+      .sort((a,b) => (a.em_rank||999) - (b.em_rank||999))
+      .map(t => ({...t, score: 0.2, matched: ['Conf record: ' + t.conf_w + '-' + t.conf_l]}))
+  },
+  {
+    key: 'top10_off_weak_def',
+    icon: '🚫',
+    label: 'Top-10 Offense, Outside Top-90 Defense',
+    color: '#fb923c',
+    bgColor: 'rgba(249,115,22,0.1)',
+    borderColor: 'rgba(249,115,22,0.3)',
+    historicalNote: "Since 2011, only 2 of 47 teams with top-10 adjusted offensive efficiency but outside the top 90 defensively made the Sweet 16. Defense is non-negotiable in March — teams that win championships are almost always top-25 on both ends. This year only Texas (OE #13, DE #111) fits this danger profile.",
+    getTeams: (teams) => Object.values(teams)
+      .filter(t => (t.adj_oe_rank||999) <= 10 && (t.adj_de_rank||999) > 90)
+      .sort((a,b) => (a.adj_oe_rank||999) - (b.adj_oe_rank||999))
+      .map(t => ({...t, score: 0.25, matched: ['Off #' + t.adj_oe_rank, 'Def #' + t.adj_de_rank + ' (danger zone)']}))
+  },
+  {
+    key: 'ap_poll_7weeks',
+    icon: '📊',
+    label: '93% of Champions Were AP Top-12 (7 Weeks Out)',
+    color: '#fbbf24',
+    bgColor: 'rgba(251,191,36,0.1)',
+    borderColor: 'rgba(251,191,36,0.3)',
+    historicalNote: "Since 1985, 93% of national champions appeared in the AP Top 12 approximately 7 weeks before the tournament. Only 3 champions in 40 years were ranked outside the top 12 at that point. This year's top-12 at 7 weeks out (~Jan 27): Duke, Arizona, Michigan, Florida, Nebraska, Houston, Iowa State, UConn, Michigan State, Purdue, Illinois, and BYU. Teams outside this group face a historically steep uphill climb.",
+    getTeams: (teams) => Object.values(teams)
+      .filter(t => (t.ap_7weeks||0) >= 1 && (t.ap_7weeks||0) <= 12)
+      .sort((a,b) => (a.ap_7weeks||99) - (b.ap_7weeks||99))
+      .map(t => ({...t, score: 0.85, matched: ['AP #' + t.ap_7weeks + ' at 7 weeks out']}))
+  },
 ];
 
 function renderTrends() {

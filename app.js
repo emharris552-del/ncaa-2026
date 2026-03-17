@@ -189,7 +189,35 @@ function getTeamBadges(t) {
   if (tempo_rank >= 290 && seed <= 10)
     badges.push({ icon:'🐢', label:'SLOW PACE', color:'#e879f9', tip:`#${tempo_rank} tempo — game control, under lean` });
 
-  return badges.slice(0, 4);
+  // 2025 tournament result badge
+  const r25 = t.result_2025 || 'N/A';
+  const s25 = t.seed_2025 || 0;
+  if (r25 !== 'N/A') {
+    const resultColors = {
+      '🏆 Champion':   '#f59e0b',
+      '🥈 Runner-Up':  '#94a3b8',
+      '🏅 Final Four': '#a78bfa',
+      'E8':            '#60a5fa',
+      'S16':           '#34d399',
+      'R32':           '#8fa3c0',
+      'R64':           '#556882',
+      'First Four':    '#556882',
+    };
+    const rColor = resultColors[r25] || '#556882';
+    const rLabel = r25.replace('🏆 ','').replace('🥈 ','').replace('🏅 ','');
+    const seedStr = s25 > 0 ? ` (${s25})` : '';
+    badges.push({ icon:'📅', label:`'25: ${rLabel}${seedStr}`, color:rColor,
+      tip:`2025 NCAA Tournament: ${r25}${s25>0?' as a '+s25+'-seed':''}` });
+  }
+
+  // AP ranking badge (final pre-tournament)
+  const apRank = t.ap_final || 0;
+  if (apRank > 0 && apRank <= 10) {
+    badges.push({ icon:'📊', label:`AP #${apRank}`, color:'#fbbf24',
+      tip:`Ranked #${apRank} in final AP Top 25 before tournament` });
+  }
+
+  return badges.slice(0, 5);
 }
 
 function renderTeamHeader(elId, team, color) {

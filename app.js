@@ -19,6 +19,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if (btn.dataset.view === 'standings') { if(_stSubTab==='rankings') renderStandings(); else if(_stSubTab==='seedanalysis') renderSeedAnalysis(); else if(_stSubTab==='upsethistory') renderUpsetHistory(); else if(_stSubTab==='losspatterns') renderLossPatterns(); }
     if (btn.dataset.view === 'trends') renderTrends();
     if (btn.dataset.view === 'betting') renderBettingPage();
+    if (btn.dataset.view === 'regioncharts') renderRegionCharts();
 
   });
 });

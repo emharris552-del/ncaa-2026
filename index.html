@@ -3448,7 +3448,7 @@ const ADDITIONAL_TRENDS = [
       .filter(t => (t.ap_7weeks||0) >= 1 && (t.ap_7weeks||0) <= 12)
       .sort((a,b) => (a.ap_7weeks||99) - (b.ap_7weeks||99))
       .map(t => ({...t, score: 0.85, matched: ['AP #' + t.ap_7weeks + ' at 7 weeks out']}))
-  },,
+  },
   {
     key: 'home_proximity',
     icon: '🏠',
